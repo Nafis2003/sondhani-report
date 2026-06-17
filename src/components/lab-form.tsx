@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { Save, Phone, Calendar, Droplet, FileText, User } from "lucide-react";
+import { Save, Phone, Calendar, Droplet, FileText, User, Loader2 } from "lucide-react";
 import { savePatient } from "@/lib/localforage";
 import { syncToCloud } from "@/lib/sync";
 import type { PatientRecord, TestName } from "@/lib/types";
@@ -403,7 +403,7 @@ export function LabForm({ onSaved, initialData, isEditMode = false }: LabFormPro
                 >
                   {savingMode === "save" ? (
                     <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-foreground/30 border-t-foreground" />
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       Saving...
                     </span>
                   ) : (
@@ -423,7 +423,7 @@ export function LabForm({ onSaved, initialData, isEditMode = false }: LabFormPro
                 >
                   {savingMode === "pdf" ? (
                     <span className="flex items-center gap-2">
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       Processing...
                     </span>
                   ) : (
