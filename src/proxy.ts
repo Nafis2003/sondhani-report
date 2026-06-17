@@ -5,8 +5,12 @@ import { jwtVerify } from 'jose'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   
-  // Allow login API and login page
-  if (pathname === '/login' || pathname === '/api/auth/login') {
+  // Allow login/logout API and login page (including ?error= and RSC variants)
+  if (
+    pathname.startsWith('/login') ||
+    pathname === '/api/auth/login' ||
+    pathname === '/api/auth/logout'
+  ) {
     return NextResponse.next()
   }
 

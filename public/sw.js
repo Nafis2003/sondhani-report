@@ -1,8 +1,7 @@
-const CACHE_NAME = 'sondhani-ddc-cache-v2';
+const CACHE_NAME = 'sondhani-ddc-cache-v6';
 
 // Add the assets you want to be cached immediately
 const PRECACHE_ASSETS = [
-  '/',
   '/offline',
   '/manifest.webmanifest',
   '/icon-192x192.png',
@@ -47,56 +46,53 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
+  // Skip non-GET requests and cross-origin requests
+  if (event.request.method !== 'GET' || !event.request.url.startsWith(self.location.origin)) {
     return;
   }
 
-  // Network-First for API requests to ensure fresh data if online
-  if (event.request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .catch(() => {
+  const url = new URL(event.request.url);
+
+  // Skip Next.js dev server and HMR traffic completely
+  if (url.pathname.startsWith('/_next/webpack-hmr') || url.pathname.includes('/_next/dev/')) {
+    return;
+  }
+
+  // Use Network-First strategy for EVERYTHING to prevent Next.js router loops
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Only cache valid, non-redirected HTML/asset responses for offline use
+        if (networkResponse.ok && !networkResponse.redirected && networkResponse.type !== 'opaque' && !url.pathname.startsWith('/api/')) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(async () => {
+        // Network failed (offline), try to serve from cache
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // If it's an API request that fails offline, return a JSON error
+        if (url.pathname.startsWith('/api/')) {
           return new Response(
             JSON.stringify({ error: 'Network offline and no cached API response available.' }), 
             { headers: { 'Content-Type': 'application/json' }, status: 503 }
           );
-        })
-    );
-    return;
-  }
-
-  // For static assets and HTML navigation: Stale-While-Revalidate or Network-First
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // Fetch in background to update cache (Stale-While-Revalidate)
-        event.waitUntil(
-          fetch(event.request).then((networkResponse) => {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse.clone());
-            });
-          }).catch(() => {
-            // Ignore network errors in background fetch
-          })
-        );
-        return cachedResponse;
-      }
-
-      // If not in cache, fetch from network
-      return fetch(event.request).then((networkResponse) => {
-        return caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
-        });
-      }).catch(() => {
-        // If navigation request fails, serve the offline fallback or the root page
-        if (event.request.mode === 'navigate') {
-          return caches.match('/offline').then(offlineResponse => {
-            return offlineResponse || caches.match('/');
-          });
         }
-      });
-    })
+
+        // If it's a page navigation that fails offline and isn't in cache, serve /offline fallback
+        if (event.request.mode === 'navigate') {
+          const offlineResponse = await caches.match('/offline');
+          return offlineResponse || new Response('Offline', { status: 503 });
+        }
+
+        return new Response('Offline', { status: 503 });
+      })
   );
 });

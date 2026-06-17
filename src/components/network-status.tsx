@@ -9,7 +9,7 @@ export function NetworkStatus() {
   const [justReconnected, setJustReconnected] = useState(false);
 
   useEffect(() => {
-    setIsOnline(navigator.onLine);
+    setTimeout(() => setIsOnline(navigator.onLine), 0);
 
     const handleOnline = () => {
       setIsOnline(true);

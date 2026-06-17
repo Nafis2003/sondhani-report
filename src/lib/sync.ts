@@ -116,8 +116,10 @@ export async function pullFromCloud(): Promise<void> {
   try {
     console.log("[Sync] Pulling records from cloud...");
     const res = await fetch("/api/sync");
-    if (res.status === 401) {
-      await forceLogout();
+    if (!res.ok) {
+      // Silently fail — the proxy handles auth redirects at the routing level.
+      // Forcing logout here on a background sync failure causes an infinite reload loop in dev.
+      console.warn("[Sync] Pull failed with status:", res.status);
       return;
     }
     const data = await res.json();

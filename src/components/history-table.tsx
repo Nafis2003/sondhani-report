@@ -51,7 +51,7 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
   }, [searchQuery]);
 
   useEffect(() => {
-    loadPatients();
+    setTimeout(() => loadPatients(), 0);
   }, [loadPatients, refreshTrigger]);
 
   const handleSearch = (value: string) => {

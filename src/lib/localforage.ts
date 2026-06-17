@@ -6,7 +6,7 @@ import { getEncryptionKey } from "./store";
 const patientStore = localforage.createInstance({
   name: "SondhaniLabDB",
   storeName: "patients",
-  driver: [localforage.INDEXEDDB, localforage.LOCALSTORAGE],
+  driver: localforage.INDEXEDDB,
 });
 
 async function requireKey() {

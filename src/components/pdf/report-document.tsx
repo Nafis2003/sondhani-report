@@ -6,7 +6,9 @@ import { TEST_LABELS, type TestName } from "@/lib/types";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 56,
+    paddingTop: 140, // Space for preprinted header
+    paddingBottom: 56,
+    paddingHorizontal: 56,
     fontSize: 10,
     fontFamily: "Helvetica",
     color: "#1e1e1e",
@@ -36,13 +38,28 @@ const styles = StyleSheet.create({
   metaGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginBottom: 32,
+    marginBottom: 8,
     padding: 20,
     backgroundColor: "#f9f9f9",
   },
-  metaItem: {
-    width: "33.33%",
+  reportDateTime: {
+    fontSize: 9,
+    color: "#4b5563",
+    marginBottom: 32,
+    textAlign: "right",
+    paddingRight: 4,
+  },
+  metaItemName: {
+    width: "50%",
     marginBottom: 14,
+    paddingRight: 12,
+  },
+  metaItemSmall: {
+    width: "25%",
+    marginBottom: 14,
+  },
+  metaItemHalf: {
+    width: "50%",
   },
   metaLabel: {
     fontSize: 8,
@@ -62,6 +79,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "#555",
+    textAlign: "center",
   },
   tableHeader: {
     flexDirection: "row",
@@ -124,6 +142,20 @@ const styles = StyleSheet.create({
     color: "#999",
     textAlign: "center",
   },
+  signatureContainer: {
+    marginTop: 60,
+    alignSelf: "flex-end",
+    width: 160,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+    paddingTop: 8,
+    alignItems: "center",
+  },
+  signatureText: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: "#333",
+  },
 });
 
 interface ReportDocumentProps {
@@ -136,48 +168,49 @@ export function ReportDocument({ record }: ReportDocumentProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.clinicName}>Sondhani DDC</Text>
-          <Text style={styles.department}>Blood Testing Lab</Text>
-          <Text style={styles.location}>Mirpur 14, Dhaka, Bangladesh</Text>
-        </View>
-
         {/* Patient Info */}
         <View style={styles.metaGrid}>
-          <View style={styles.metaItem}>
+          <View style={styles.metaItemName}>
             <Text style={styles.metaLabel}>Patient Name</Text>
             <Text style={styles.metaValue}>{record.name}</Text>
           </View>
-          <View style={styles.metaItem}>
+          <View style={styles.metaItemSmall}>
             <Text style={styles.metaLabel}>Age</Text>
-            <Text style={styles.metaValue}>{record.age} years</Text>
+            <Text style={styles.metaValue}>{record.age} Y</Text>
           </View>
-          <View style={styles.metaItem}>
+          <View style={styles.metaItemSmall}>
+            <Text style={styles.metaLabel}>Sex</Text>
+            <Text style={styles.metaValue}>{record.sex || "N/A"}</Text>
+          </View>
+          <View style={styles.metaItemHalf}>
             <Text style={styles.metaLabel}>Mobile</Text>
             <Text style={styles.metaValue}>{record.mobile}</Text>
           </View>
-          <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Date</Text>
-            <Text style={styles.metaValue}>{record.date}</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Text style={styles.metaLabel}>Time</Text>
-            <Text style={styles.metaValue}>{record.time}</Text>
-          </View>
-          <View style={styles.metaItem}>
+          <View style={styles.metaItemHalf}>
             <Text style={styles.metaLabel}>Ref ID</Text>
             <Text style={styles.metaValue}>{record.refId}</Text>
           </View>
         </View>
 
+        <Text style={styles.reportDateTime}>
+          Report Generated: {record.date} at {record.time}
+        </Text>
+
         {/* Test Results */}
-        <Text style={styles.sectionTitle}>Test Results</Text>
+        <Text style={styles.sectionTitle}>Blood Screening Report</Text>
         <View style={styles.tableHeader}>
           <Text style={styles.tableHeaderCell}>Test</Text>
           <Text style={styles.tableHeaderCell}>Result</Text>
         </View>
-        {testNames.map((test) => (
+        {[...testNames]
+          .sort((a, b) => {
+            const aIsSet = record[a] !== "N/A";
+            const bIsSet = record[b] !== "N/A";
+            if (aIsSet && !bIsSet) return -1;
+            if (!aIsSet && bIsSet) return 1;
+            return 0;
+          })
+          .map((test) => (
           <View key={test} style={styles.tableRow}>
             <Text style={styles.tableCell}>{TEST_LABELS[test]}</Text>
             <Text
@@ -185,7 +218,9 @@ export function ReportDocument({ record }: ReportDocumentProps) {
                 styles.tableCell,
                 record[test] === "Positive"
                   ? styles.resultPositive
-                  : styles.resultNegative,
+                  : record[test] === "Negative"
+                  ? styles.resultNegative
+                  : undefined,
               ]}
             >
               {record[test]}
@@ -208,6 +243,11 @@ export function ReportDocument({ record }: ReportDocumentProps) {
             </Text>
           </View>
         )}
+
+        {/* Signature Block */}
+        <View style={styles.signatureContainer}>
+          <Text style={styles.signatureText}>Signature</Text>
+        </View>
       </Page>
     </Document>
   );

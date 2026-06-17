@@ -18,10 +18,10 @@ export default function LoginPage() {
   useEffect(() => {
     // Check if we have an active session that just needs unlocking
     const isAuth = localStorage.getItem("isAuthenticated") === "true";
-    setMode(isAuth ? "unlock" : "login");
+    setTimeout(() => setMode(isAuth ? "unlock" : "login"), 0);
 
     // Network listeners
-    setIsOffline(!navigator.onLine);
+    setTimeout(() => setIsOffline(!navigator.onLine), 0);
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
     window.addEventListener("online", handleOnline);

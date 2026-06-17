@@ -33,7 +33,7 @@ export default function PdfPreview({ record, onClose }: PdfPreviewProps) {
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-full h-8 w-8"
+              className="text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-md h-8 w-8"
             >
               <X className="h-4 w-4" />
             </Button>
