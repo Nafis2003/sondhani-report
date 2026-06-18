@@ -359,7 +359,7 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
             </div>
 
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 py-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-4">
                 <p className="text-xs text-muted-foreground order-2 sm:order-1">
                   Showing {(currentPage - 1) * pageSize + 1}–
                   {Math.min(currentPage * pageSize, displayedReports.length)} of{" "}

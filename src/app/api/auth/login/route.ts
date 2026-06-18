@@ -40,12 +40,14 @@ export async function POST(req: Request) {
 
     const response = NextResponse.json({ success: true });
     
-    // Set cookie
+    const isSecure = process.env.NODE_ENV === "production" &&
+                     new URL(req.url).protocol === "https:";
+
     response.cookies.set({
       name: "auth_token",
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecure,
       sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: "/",
