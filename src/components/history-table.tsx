@@ -28,7 +28,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Search, Trash2, Clock, Eye, SlidersHorizontal, Pencil, Download, Check } from "lucide-react";
+import { Search, Trash2, Clock, Eye, SlidersHorizontal, Pencil, Download, Check, ChevronsLeft, ChevronsRight } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { getAllReports, searchReports, deleteReport } from "@/lib/localforage";
 import { cleanupExpiredRecords } from "@/lib/ttl";
 import type { ReportRecord } from "@/lib/types";
@@ -46,6 +55,8 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 25;
 
   const filterOptions = [
     { value: "all", label: "All Reports" },
@@ -87,6 +98,10 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
   useEffect(() => {
     setTimeout(() => loadReports(), 0);
   }, [loadReports, refreshTrigger]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, filter]);
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -131,20 +146,33 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
     p.hiv === "Positive" ||
     p.vdrl === "Positive";
 
-  const displayedReports = useMemo(
-    () =>
-      reports
-        .filter((p) => {
-          if (filter === "positive") return hasPositiveTests(p);
-          if (filter === "negative") return !hasPositiveTests(p);
-          return true;
-        })
-        .sort((a, b) => {
-          if (filter === "oldest") return a.createdAt - b.createdAt;
-          return b.createdAt - a.createdAt;
-        }),
-    [reports, filter],
+  const { displayedReports, totalPages } = useMemo(() => {
+    const filtered = reports
+      .filter((p) => {
+        if (filter === "positive") return hasPositiveTests(p);
+        if (filter === "negative") return !hasPositiveTests(p);
+        return true;
+      })
+      .sort((a, b) => {
+        if (filter === "oldest") return a.createdAt - b.createdAt;
+        return b.createdAt - a.createdAt;
+      });
+    return {
+      displayedReports: filtered,
+      totalPages: Math.max(1, Math.ceil(filtered.length / pageSize)),
+    };
+  }, [reports, filter]);
+
+  const paginatedReports = useMemo(
+    () => displayedReports.slice((currentPage - 1) * pageSize, currentPage * pageSize),
+    [displayedReports, currentPage],
   );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -245,89 +273,157 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-border/50 bg-secondary/30">
-                  <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground pl-4">Ref ID</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Name</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Mobile</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Date</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Status</TableHead>
-                  <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground text-right pr-4">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {displayedReports.map((report) => (
-                  <TableRow key={report.id} className="border-border/50 hover:bg-secondary/20 transition-colors">
-                    <TableCell className="font-mono text-xs text-muted-foreground pl-4">
-                      {report.refId}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {report.name}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm text-muted-foreground">
-                      {report.mobile}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {report.date}
-                    </TableCell>
-                    <TableCell>
-                      {hasPositiveTests(report) ? (
-                        <Badge variant="destructive" className="bg-destructive/10 text-destructive hover:bg-destructive/20 shadow-none border-none px-2.5 py-1">
-                          Positive
-                        </Badge>
-                      ) : (
-                        <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-none border-none px-2.5 py-1">
-                          Negative
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right pr-4">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDownload(report)}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                          title="Download PDF"
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onViewPdf(report)}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50 hidden sm:inline-flex"
-                          title="View PDF"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onEdit(report)}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                          title="Edit report"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(report.id, report.refId)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          title="Delete record"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent border-border/50 bg-secondary/30">
+                    <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground pl-4">Ref ID</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Name</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Mobile</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Date</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground">Status</TableHead>
+                    <TableHead className="font-medium text-xs uppercase tracking-wider h-10 text-muted-foreground text-right pr-4">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {paginatedReports.map((report) => (
+                    <TableRow key={report.id} className="border-border/50 hover:bg-secondary/20 transition-colors">
+                      <TableCell className="font-mono text-xs text-muted-foreground pl-4">
+                        {report.refId}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {report.name}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-muted-foreground">
+                        {report.mobile}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {report.date}
+                      </TableCell>
+                      <TableCell>
+                        {hasPositiveTests(report) ? (
+                          <Badge variant="destructive" className="bg-destructive/10 text-destructive hover:bg-destructive/20 shadow-none border-none px-2.5 py-1">
+                            Positive
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 shadow-none border-none px-2.5 py-1">
+                            Negative
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right pr-4">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDownload(report)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                            title="Download PDF"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onViewPdf(report)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50 hidden sm:inline-flex"
+                            title="View PDF"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onEdit(report)}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                            title="Edit report"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(report.id, report.refId)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="Delete record"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-1 py-4">
+                <p className="text-xs text-muted-foreground order-2 sm:order-1">
+                  Showing {(currentPage - 1) * pageSize + 1}–
+                  {Math.min(currentPage * pageSize, displayedReports.length)} of{" "}
+                  {displayedReports.length} reports
+                </p>
+                <Pagination className="order-1 sm:order-2 w-auto">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage((p) => Math.max(1, p - 1));
+                        }}
+                        aria-disabled={currentPage === 1}
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        if (totalPages <= 7) return true;
+                        if (page === 1 || page === totalPages) return true;
+                        if (Math.abs(page - currentPage) <= 1) return true;
+                        return false;
+                      })
+                      .map((page, idx, arr) => (
+                        <span key={page} className="contents">
+                          {idx > 0 && page - arr[idx - 1] > 1 && (
+                            <PaginationItem>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          )}
+                          <PaginationItem>
+                            <PaginationLink
+                              href="#"
+                              isActive={page === currentPage}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        </span>
+                      ))}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage((p) => Math.min(totalPages, p + 1));
+                        }}
+                        aria-disabled={currentPage === totalPages}
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
