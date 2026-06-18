@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Lock, User, Mail, WifiOff, Unlock as UnlockIcon } from "lucide-react";
+import { Lock, Mail, Droplet } from "lucide-react";
 import { deriveKey, createVerificationData, verifyKey } from "@/lib/crypto";
 import { setEncryptionKey } from "@/lib/store";
 
@@ -116,72 +116,76 @@ export default function LoginPage() {
   if (mode === null) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-4">
-            {mode === "unlock" ? (
-               <UnlockIcon className="h-6 w-6 text-primary" />
-            ) : isOffline ? (
-               <WifiOff className="h-6 w-6 text-primary" />
-            ) : (
-               <User className="h-6 w-6 text-primary" />
-            )}
+    <div className="h-dvh flex flex-col bg-background">
+      {/* Brand Header */}
+      <header className="w-full py-6 px-4 md:px-8">
+        <div className="max-w-sm mx-auto flex items-center gap-4 font-bold tracking-tighter text-2xl">
+          <div className="flex h-10 w-10 items-center justify-center bg-foreground text-background shrink-0">
+            <Droplet className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            {mode === "unlock" ? "Unlock Database" : "Welcome Back"}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-2 px-2">
-            {mode === "unlock" 
-              ? "Enter your password to decrypt the local database and resume your session."
-              : isOffline 
-                ? "You must be connected to the internet to log in."
-                : "Enter your credentials to log in to the system."}
-          </p>
+          Sondhani DDC
         </div>
+      </header>
 
-        <form onSubmit={handleLogin}>
-          <div className="flex flex-col w-full overflow-hidden rounded-md border border-border focus-within:ring-1 focus-within:ring-ring bg-muted">
-            {mode === "login" && (
-              <div className="relative w-full border-b border-border">
-                <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      {/* Form centered */}
+      <div className="flex-1 flex items-center justify-center px-4 pb-16">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {mode === "unlock" ? "Unlock Database" : "Welcome Back"}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-2 px-2">
+              {mode === "unlock" 
+                ? "Enter your password to decrypt the local database and resume your session."
+                : isOffline 
+                  ? "You must be connected to the internet to log in."
+                  : "Enter your credentials to log in to the system."}
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin}>
+            <div className="flex flex-col w-full overflow-hidden rounded-md border border-border focus-within:ring-1 focus-within:ring-ring bg-muted">
+              {mode === "login" && (
+                <div className="relative w-full border-b border-border">
+                  <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    disabled={isOffline}
+                    className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
+                    style={{ paddingLeft: "2.75rem", paddingRight: "0.75rem" }}
+                  />
+                </div>
+              )}
+              <div className="relative w-full">
+                <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                 <input
-                  id="email"
-                  type="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  disabled={isOffline}
+                  id="password"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  autoFocus={true}
+                  disabled={mode === "login" && isOffline}
                   className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
                   style={{ paddingLeft: "2.75rem", paddingRight: "0.75rem" }}
                 />
               </div>
-            )}
-            <div className="relative w-full border-b border-border">
-              <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              <input
-                id="password"
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                autoFocus={true}
-                disabled={mode === "login" && isOffline}
-                className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
-                style={{ paddingLeft: "2.75rem", paddingRight: "0.75rem" }}
-              />
+              <button
+                type="submit"
+                disabled={isLoading || (mode === "login" && isOffline)}
+                className="h-11 w-full bg-primary text-primary-foreground text-xs font-semibold tracking-widest uppercase disabled:opacity-50 transition-colors hover:bg-primary/80"
+              >
+                {isLoading ? "..." : (mode === "unlock" ? "Unlock" : "Sign In")}
+              </button>
             </div>
-            <button
-              type="submit"
-              disabled={isLoading || (mode === "login" && isOffline)}
-              className="h-11 w-full bg-primary text-primary-foreground text-xs font-semibold tracking-widest uppercase disabled:opacity-50 transition-colors hover:bg-primary/80"
-            >
-              {isLoading ? "..." : (mode === "unlock" ? "Unlock" : "Sign In")}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
