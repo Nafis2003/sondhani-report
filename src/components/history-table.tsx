@@ -20,7 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Trash2, Clock, Eye, SlidersHorizontal, Pencil, Download } from "lucide-react";
+import {
+  Dialog,
+  DialogPortal,
+  DialogBackdrop,
+  DialogPopup,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Search, Trash2, Clock, Eye, SlidersHorizontal, Pencil, Download, Check } from "lucide-react";
 import { getAllReports, searchReports, deleteReport } from "@/lib/localforage";
 import { cleanupExpiredRecords } from "@/lib/ttl";
 import type { ReportRecord } from "@/lib/types";
@@ -37,6 +45,16 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const filterOptions = [
+    { value: "all", label: "All Reports" },
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+    { value: "positive", label: "Positive Only" },
+    { value: "negative", label: "Negative Only" },
+  ] as const;
+
 
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -142,23 +160,74 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
               className="pl-12 rounded-none focus:z-10 bg-card border-border h-12 text-base shadow-none"
             />
           </div>
-          <Select value={filter} onValueChange={(val) => setFilter(val || "all")}>
-            <SelectTrigger className="!h-12 w-[160px] sm:w-[180px] px-4 text-sm font-medium bg-card border border-border transition-colors rounded-none flex-shrink-0 shadow-none focus:z-10">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="text-foreground"><SelectValue placeholder="Filter" /></span>
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Reports</SelectItem>
-              <SelectItem value="newest">Newest First</SelectItem>
-              <SelectItem value="oldest">Oldest First</SelectItem>
-              <SelectItem value="positive">Positive Only</SelectItem>
-              <SelectItem value="negative">Negative Only</SelectItem>
-            </SelectContent>
-          </Select>
+
+          {/* Desktop filter select */}
+          <div className="hidden sm:block">
+            <Select value={filter} onValueChange={(val) => setFilter(val || "all")}>
+              <SelectTrigger className="!h-12 w-[160px] lg:w-[180px] px-4 text-sm font-medium bg-card border border-border transition-colors rounded-none flex-shrink-0 shadow-none focus:z-10">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="text-foreground"><SelectValue placeholder="Filter" /></span>
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Reports</SelectItem>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="positive">Positive Only</SelectItem>
+                <SelectItem value="negative">Negative Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Mobile filter button */}
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setFilterOpen(true)}
+            className="sm:hidden h-12 w-12 rounded-none border-border shadow-none focus:z-10 relative"
+          >
+            <SlidersHorizontal className="h-5 w-5" />
+            {filter !== "all" && (
+              <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
+            )}
+          </Button>
         </div>
       </div>
+
+      {/* Mobile filter drawer */}
+      <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+        <DialogPortal>
+          <DialogBackdrop />
+          <DialogPopup className="max-w-md mx-auto">
+            <DialogTitle className="text-lg">Filter Reports</DialogTitle>
+            <DialogDescription className="text-sm mt-1">
+              Sort and filter your report history.
+            </DialogDescription>
+            <div className="mt-5 -mx-1">
+              {filterOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setFilter(option.value);
+                    setFilterOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between px-3 py-3 text-sm rounded-lg transition-colors ${
+                    filter === option.value
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "hover:bg-muted text-foreground"
+                  }`}
+                >
+                  {option.label}
+                  {filter === option.value && (
+                    <Check className="h-4 w-4 text-primary" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </DialogPopup>
+        </DialogPortal>
+      </Dialog>
 
       {/* Table Area */}
       <div className="border border-border/50 bg-background/50 overflow-hidden min-h-[300px]">
