@@ -3,7 +3,7 @@ import { SignJWT } from "jose";
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-sandhani";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export async function POST(req: Request) {
   try {
@@ -22,6 +22,13 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { success: false, error: "Invalid email or password" },
         { status: 401 }
+      );
+    }
+
+    if (!JWT_SECRET) {
+      return NextResponse.json(
+        { success: false, error: "Server misconfiguration" },
+        { status: 500 }
       );
     }
 

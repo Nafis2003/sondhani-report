@@ -36,8 +36,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret) {
+    console.error('[proxy] JWT_SECRET is not set')
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
+    }
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('error', 'session_expired')
+    return NextResponse.redirect(loginUrl)
+  }
+
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-sandhani')
+    const secret = new TextEncoder().encode(jwtSecret)
     await jwtVerify(token, secret)
     return NextResponse.next()
   } catch {
