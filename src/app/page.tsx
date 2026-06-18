@@ -120,7 +120,14 @@ export default function Dashboard() {
 
       {/* PDF Overlay */}
       {pdfRecord && (
-        <Suspense fallback={null}>
+        <Suspense fallback={
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+            <div className="flex items-center gap-3 rounded-xl bg-white px-6 py-4 shadow-lg">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-800" />
+              <span className="text-sm font-medium text-slate-700">Loading PDF viewer...</span>
+            </div>
+          </div>
+        }>
           <PdfPreview record={pdfRecord} onClose={() => setPdfRecord(null)} />
         </Suspense>
       )}

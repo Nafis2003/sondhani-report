@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useDebounce } from "@/hooks/use-debounce";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,18 +38,33 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
 
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Separate TTL cleanup — runs on mount and every 5 min, never on search
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const deleted = await cleanupExpiredRecords();
+        if (deleted > 0) {
+          toast.info(`Cleaned up ${deleted} expired record(s)`);
+        }
+      } catch {
+        // silent
+      }
+    };
+    run();
+    const interval = setInterval(run, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const loadReports = useCallback(async () => {
     setLoading(true);
-    const deleted = await cleanupExpiredRecords();
-    if (deleted > 0) {
-      toast.info(`Cleaned up ${deleted} expired record(s)`);
-    }
-    const data = searchQuery
-      ? await searchReports(searchQuery)
+    const data = debouncedSearchQuery
+      ? await searchReports(debouncedSearchQuery)
       : await getAllReports();
     setReports(data);
     setLoading(false);
-  }, [searchQuery]);
+  }, [debouncedSearchQuery]);
 
   useEffect(() => {
     setTimeout(() => loadReports(), 0);
@@ -72,7 +88,7 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 500);
       
       toast.success("Download started", { id: "pdf-gen" });
     } catch (error) {
@@ -97,16 +113,20 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
     p.hiv === "Positive" ||
     p.vdrl === "Positive";
 
-  const displayedReports = reports
-    .filter((p) => {
-      if (filter === "positive") return hasPositiveTests(p);
-      if (filter === "negative") return !hasPositiveTests(p);
-      return true;
-    })
-    .sort((a, b) => {
-      if (filter === "oldest") return a.createdAt - b.createdAt;
-      return b.createdAt - a.createdAt;
-    });
+  const displayedReports = useMemo(
+    () =>
+      reports
+        .filter((p) => {
+          if (filter === "positive") return hasPositiveTests(p);
+          if (filter === "negative") return !hasPositiveTests(p);
+          return true;
+        })
+        .sort((a, b) => {
+          if (filter === "oldest") return a.createdAt - b.createdAt;
+          return b.createdAt - a.createdAt;
+        }),
+    [reports, filter],
+  );
 
   return (
     <div className="space-y-6">
@@ -141,7 +161,7 @@ export function HistoryTable({ onViewPdf, onEdit, refreshTrigger }: HistoryTable
       </div>
 
       {/* Table Area */}
-      <div className="border border-border/50 bg-background/50 overflow-hidden">
+      <div className="border border-border/50 bg-background/50 overflow-hidden min-h-[300px]">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-foreground" />
