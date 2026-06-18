@@ -144,9 +144,20 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleLogin}>
-            <div className="flex flex-col w-full overflow-hidden rounded-md border border-border focus-within:ring-1 focus-within:ring-ring bg-muted">
+            {mode === "unlock" && (
+              <input
+                id="unlock-email"
+                name="email"
+                type="text"
+                autoComplete="username"
+                className="hidden"
+                readOnly
+                tabIndex={-1}
+              />
+            )}
+            <div className="flex flex-col w-full overflow-hidden rounded-md border border-border divide-y divide-border focus-within:ring-1 focus-within:ring-ring bg-muted">
               {mode === "login" && (
-                <div className="relative w-full border-b border-border">
+                <div className="relative w-full">
                   <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                   <input
                     id="email"
