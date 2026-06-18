@@ -1,4 +1,4 @@
-import { getUnsyncedReports, updateReportSync, mergeServerRecords, clearAllReports } from "./localforage";
+import { getUnsyncedReports, updateReportSync, mergeServerRecords } from "./localforage";
 import { clearEncryptionKey } from "./store";
 import type { ReportRecord } from "./types";
 

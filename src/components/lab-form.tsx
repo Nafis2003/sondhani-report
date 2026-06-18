@@ -352,7 +352,7 @@ export function LabForm({ onSaved, initialData, isEditMode = false }: LabFormPro
             {/* Test Results Section */}
             <section className="p-6 md:p-10">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {testNames.map((test, index) => (
+                {testNames.map((test) => (
                   <FormField
                     key={test}
                     control={form.control}

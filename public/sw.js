@@ -7,11 +7,6 @@ const PRECACHE_ASSETS = [
   '/icon.svg',
   '/icon-192x192.png',
   '/icon-512x512.png',
-  '/file.svg',
-  '/globe.svg',
-  '/next.svg',
-  '/vercel.svg',
-  '/window.svg'
 ];
 
 self.addEventListener('install', (event) => {

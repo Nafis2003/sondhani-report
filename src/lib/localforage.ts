@@ -42,10 +42,6 @@ export async function saveReport(record: ReportRecord): Promise<void> {
   await storeEncrypted(record.id, record);
 }
 
-export async function getReport(id: string): Promise<ReportRecord | null> {
-  return await getDecrypted(id);
-}
-
 export async function getAllReports(): Promise<ReportRecord[]> {
   const reports: ReportRecord[] = [];
   const key = await requireKey(); // fast fail if locked
@@ -58,7 +54,7 @@ export async function getAllReports(): Promise<ReportRecord[]> {
         const plaintext = await decryptData(ciphertext, key);
         const value = JSON.parse(plaintext) as ReportRecord;
         if (!value.isDeleted) reports.push(value);
-      } catch (e) {
+      } catch {
         console.error("Skipping corrupted or un-decryptable record:", k);
       }
     }
@@ -114,10 +110,6 @@ export async function updateReportSync(
 export async function getUnsyncedReports(): Promise<ReportRecord[]> {
   const all = await getAllReports();
   return all.filter((p) => !p.synced);
-}
-
-export async function clearAllReports(): Promise<void> {
-  await reportStore.clear();
 }
 
 export async function mergeServerRecords(serverRecords: ReportRecord[]): Promise<void> {

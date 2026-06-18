@@ -28,5 +28,3 @@ export const TEST_LABELS: Record<TestName, string> = {
   hiv: "HIV",
   vdrl: "VDRL",
 };
-
-export const TEST_OPTIONS = ["Negative", "Positive"] as const;

@@ -6,14 +6,12 @@ import { useEffect, useState } from "react";
 export function NetworkStatus() {
   const [isOnline, setIsOnline] = useState(true);
   const [showIndicator, setShowIndicator] = useState(false);
-  const [justReconnected, setJustReconnected] = useState(false);
 
   useEffect(() => {
     setTimeout(() => setIsOnline(navigator.onLine), 0);
 
     const handleOnline = () => {
       setIsOnline(true);
-      setJustReconnected(true);
       setShowIndicator(true);
       setTimeout(() => setShowIndicator(false), 3000);
     };
@@ -21,7 +19,6 @@ export function NetworkStatus() {
     const handleOffline = () => {
       setIsOnline(false);
       setShowIndicator(true);
-      setJustReconnected(false);
     };
 
     window.addEventListener("online", handleOnline);

@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-sondhani')
     await jwtVerify(token, secret)
     return NextResponse.next()
-  } catch (error) {
+  } catch {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }

@@ -105,7 +105,7 @@ export default function LoginPage() {
           toast.error(data.error || "Login failed");
         }
       }
-    } catch (err) {
+    } catch {
       toast.error("Network error during login.");
     } finally {
       setIsLoading(false);

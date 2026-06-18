@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getEncryptionKey, clearEncryptionKey } from "@/lib/store";
-import { clearAllReports } from "@/lib/localforage";
 import { InstallPWA } from "@/components/install-pwa";
 import { LabForm } from "@/components/lab-form";
 import { HistoryTable } from "@/components/history-table";
